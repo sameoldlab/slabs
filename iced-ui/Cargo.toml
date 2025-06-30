@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-iced = "0.13.1"
+iced = {version = "0.13.1", features = ["smol"]}
 iced_layershell = "0.13.7"
 iced_runtime = "0.13.2"
+smol = "2.0.2"
+time-format = "1.2.1"

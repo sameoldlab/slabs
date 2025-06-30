@@ -1,5 +1,10 @@
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+
 use iced::widget::{button, column, row, text, text_input};
-use iced::{event, Alignment, Color, Element, Event, Font, Length, Padding, Task as Command, Theme};
+use iced::{
+    Alignment, Color, Element, Event, Font, Length, Padding, Subscription, Task as Command, Theme,
+    event, time,
+};
 use iced_layershell::Application;
 use iced_layershell::reexport::{Anchor, KeyboardInteractivity, Layer};
 use iced_layershell::settings::{LayerShellSettings, Settings, StartMode};
@@ -26,13 +31,16 @@ pub fn main() -> Result<(), iced_layershell::Error> {
     })
 }
 
-struct Slabs {}
+struct Slabs {
+    time: String,
+}
 
 #[to_layer_message]
 #[derive(Debug, Clone)]
 #[doc = "Some docs"]
 enum Message {
     IcedEvent(Event),
+    TimeTick(time_format::TimeStamp),
 }
 
 impl Application for Slabs {
@@ -42,7 +50,12 @@ impl Application for Slabs {
     type Executor = iced::executor::Default;
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
-        (Self {}, Command::none())
+        (
+            Self {
+                time: "".to_string(),
+            },
+            Command::none(),
+        )
     }
 
     fn namespace(&self) -> String {
@@ -50,13 +63,22 @@ impl Application for Slabs {
     }
 
     fn subscription(&self) -> iced::Subscription<Self::Message> {
-        event::listen().map(Message::IcedEvent)
+        event::listen().map(Message::IcedEvent);
+        time::every(time::Duration::from_millis(800)).map(|_| {
+            let t = time_format::now().unwrap();
+            Message::TimeTick(t)
+        })
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::IcedEvent(event) => {
                 println!("hello {event:?}");
+                Command::none()
+            }
+            Message::TimeTick(ts) => {
+                self.time = time_format::strftime_local("%a %b %d, %I:%M:%S", ts).unwrap();
+
                 Command::none()
             }
             _ => unreachable!(),
@@ -68,8 +90,7 @@ impl Application for Slabs {
             .spacing(8)
             .width(Length::Fill);
 
-        let center = row![text("time").size(13),]
-            .width(Length::Fill);
+        let center = row![text(&self.time).size(13),].width(Length::Fill);
 
         let end = row![
             text("media").size(13),
